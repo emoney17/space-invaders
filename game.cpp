@@ -1,4 +1,4 @@
-#include <iostream>
+#include <cstdio>
 #include "GL/glew.h"
 #include "GLFW/glfw3.h"
 
@@ -10,9 +10,9 @@ GLFWerrorfun glfwSetErrorCallback(GLFWerrorfun cbfun);
 typedef void(*GLFWerrorfun) (int, const char*);
 
 // print the error
-void errorCallback(int error, std::string description)
+void errorCallback(int error, const char* description)
 {
-    std::cout << "Error: " << description << std::endl;
+    fprintf(stderr, "Error: %s\n", description);
 }
 
 glfwSetErrorCallback(errorCallback);
