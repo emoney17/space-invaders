@@ -1,8 +1,8 @@
 #include <cstddef>
-#include <cstdio>
 #include <cstdint>
-#include "GL/glew.h"
-#include "GLFW/glfw3.h"
+#include <cstdio>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 
 // get error events before crating window
 // events are reported through callbacks
@@ -28,6 +28,27 @@ struct Sprite
 {
     size_t width, height;
     uint8_t* data;
+};
+
+struct Alien
+{
+    size_t x, y; // position
+    uint8_t type; // alien type
+};
+
+struct Player
+{
+    size_t x, y; // position
+    size_t life; // health
+};
+
+// struct for all game related variables
+struct Game
+{
+    size_t width, height; // size of the game
+    size_t numAliens;
+    Alien* aliens; // alies as dynamically allocated array
+    Player player;
 };
 
 // to help us define colors
@@ -97,8 +118,8 @@ void bufferDrawSprite(Buffer* buffer, const Sprite& sprite, size_t x, size_t y, 
 int main(int argc, char* argv[])
 {
     // set buffer sizes
-    const size_t buffer_width = 224;
-    const size_t buffer_height = 256;
+    const size_t bufferWidth = 224;
+    const size_t bufferHeight = 256;
 
     glfwSetErrorCallback(errorCallback);
 
@@ -111,7 +132,7 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     /* Create a windowed mode window and its OpenGL context */
-    GLFWwindow* window = glfwCreateWindow(buffer_width, buffer_height, "Space Invaders", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(bufferWidth, bufferHeight, "Space Invaders", NULL, NULL);
     if(!window)
     {
         glfwTerminate();
@@ -139,8 +160,8 @@ int main(int argc, char* argv[])
 
     // create graphics buffer
     Buffer buffer;
-    buffer.width  = buffer_width;
-    buffer.height = buffer_height;
+    buffer.width  = bufferWidth;
+    buffer.height = bufferHeight;
     buffer.data   = new uint32_t[buffer.width * buffer.height];
     bufferClear(&buffer, 0); //set color
 
@@ -240,10 +261,10 @@ int main(int argc, char* argv[])
     glBindVertexArray(fullscreen_triangle_vao);
 
     // create and draw the sprite
-    Sprite alien_sprite;
-    alien_sprite.width = 11;
-    alien_sprite.height = 8;
-    alien_sprite.data = new uint8_t[88]
+    Sprite alienSprite;
+    alienSprite.width = 11;
+    alienSprite.height = 8;
+    alienSprite.data = new uint8_t[88]
     {
         0,0,1,0,0,0,0,0,1,0,0, // ..@.....@..
         0,0,0,1,0,0,0,1,0,0,0, // ...@...@...
@@ -255,14 +276,61 @@ int main(int argc, char* argv[])
         0,0,0,1,1,0,1,1,0,0,0  // ...@@.@@...
     };
 
+    // create and draw the player
+    Sprite playerSprite;
+    playerSprite.width = 11;
+    playerSprite.height = 7;
+    playerSprite.data = new uint8_t[77]
+    {
+        0,0,0,0,0,1,0,0,0,0,0, // .....@.....
+        0,0,0,0,1,1,1,0,0,0,0, // ....@@@....
+        0,0,0,0,1,1,1,0,0,0,0, // ....@@@....
+        0,1,1,1,1,1,1,1,1,1,0, // .@@@@@@@@@.
+        1,1,1,1,1,1,1,1,1,1,1, // @@@@@@@@@@@
+        1,1,1,1,1,1,1,1,1,1,1, // @@@@@@@@@@@
+        1,1,1,1,1,1,1,1,1,1,1, // @@@@@@@@@@@
+    };
+
+    // create and initialize game struct
+    Game game;
+    game.width = bufferWidth;
+    game.height = bufferHeight;
+    game.numAliens = 55; // set number of aliens
+    game.aliens = new Alien[game.numAliens];
+
+    // set position near the bottom of the screen
+    game.player.x = 112 - 5;
+    game.player.y = 32;
+
+    game.player.life = 3; // 3 lives
+
+    // initialize alien positions
+    for (size_t yi = 0; yi < 5; ++yi)
+    {
+        for (size_t xi = 0; xi < 11; ++xi)
+        {
+            game.aliens[yi * 11 + xi].x = 16 * xi + 20;
+            game.aliens[yi * 11 + xi].y = 17 * yi + 128;
+        }
+    }
+
     uint32_t clearColor = rgbToUint32(0, 128, 0);
 
     while (!glfwWindowShouldClose(window))
     {
         bufferClear(&buffer, clearColor);
 
+        // draw the player and all aliens
+        for (size_t ai = 0; ai < game.numAliens; ++ai)
+        {
+            const Alien& alien = game.aliens[ai];
+            bufferDrawSprite(&buffer, alienSprite, alien.x, alien.y, rgbToUint32(128, 0, 0));
+        }
+
+        bufferDrawSprite(&buffer, playerSprite, game.player.x, game.player.y, rgbToUint32(128, 0, 0));
+
         // draw the a red sprite at position 112, 128
-        bufferDrawSprite(&buffer, alien_sprite, 112, 128, rgbToUint32(128, 0, 0));
+        // bufferDrawSprite(&buffer, alienSprite, 112, 128, rgbToUint32(128, 0, 0));
 
         // draw the sprite each frame of the game loop
         glTexSubImage2D(
@@ -284,7 +352,7 @@ int main(int argc, char* argv[])
 
     glDeleteVertexArrays(1, &fullscreen_triangle_vao);
 
-    delete[] alien_sprite.data;
+    delete[] alienSprite.data;
     delete[] buffer.data;
 
     return 0;
