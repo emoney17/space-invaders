@@ -1,9 +1,13 @@
 CC = g++
-SRC = game.cpp
-LIB = -lglfw -lGLEW -lGL
-PROG = game
+CFLAGS = -Wall -Wextra -std=c++11 -pedantic
+SRC = main.cpp
+LIBS = -lglfw -lGLEW -lGL
+# PROG = game
 
-game:
-	$(CC) $(SRC) $(LIB) -o $(PROG)
+all: $(SRC)
+	$(CC) $(CFLAGS) $(SRC) $(LIBS) -o game
+test:
+	$(CC) $(CFLAGS) test.cpp $(LIBS) -o test
 clean:
-	rm -f $(PROG)
+	$(RM) game
+	$(RM) test
