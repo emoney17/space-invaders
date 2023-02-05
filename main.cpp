@@ -51,6 +51,16 @@ struct Game
     Player player;
 };
 
+// struct for animations
+struct SpriteAnimation
+{
+    bool loop;
+    size_t numFrames;
+    size_t frameDuration;
+    size_t time;
+    Sprite** frames;
+};
+
 // to help us define colors
 uint32_t rgbToUint32 (uint8_t r, uint8_t g, uint8_t b)
 {
@@ -132,7 +142,7 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     /* Create a windowed mode window and its OpenGL context */
-    GLFWwindow* window = glfwCreateWindow(bufferWidth, bufferHeight, "Space Invaders", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(bufferWidth, bufferHeight, "スペースインベーダー", NULL, NULL);
     if(!window)
     {
         glfwTerminate();
@@ -261,10 +271,10 @@ int main(int argc, char* argv[])
     glBindVertexArray(fullscreen_triangle_vao);
 
     // create and draw the sprite
-    Sprite alienSprite;
-    alienSprite.width = 11;
-    alienSprite.height = 8;
-    alienSprite.data = new uint8_t[88]
+    Sprite alienSprite0;
+    alienSprite0.width = 11;
+    alienSprite0.height = 8;
+    alienSprite0.data = new uint8_t[88]
     {
         0,0,1,0,0,0,0,0,1,0,0, // ..@.....@..
         0,0,0,1,0,0,0,1,0,0,0, // ...@...@...
@@ -275,6 +285,37 @@ int main(int argc, char* argv[])
         1,0,1,0,0,0,0,0,1,0,1, // @.@.....@.@
         0,0,0,1,1,0,1,1,0,0,0  // ...@@.@@...
     };
+
+    // create and draw sprite frame
+    Sprite alienSprite1;
+    alienSprite1.width = 11;
+    alienSprite1.height = 8;
+    alienSprite1.data = new uint8_t[88]
+    {
+        0,0,1,0,0,0,0,0,1,0,0, // ..@.....@..
+        1,0,0,1,0,0,0,1,0,0,1, // @..@...@..@
+        1,0,1,1,1,1,1,1,1,0,1, // @.@@@@@@@.@
+        1,1,1,0,1,1,1,0,1,1,1, // @@@.@@@.@@@
+        1,1,1,1,1,1,1,1,1,1,1, // @@@@@@@@@@@
+        0,1,1,1,1,1,1,1,1,1,0, // .@@@@@@@@@.
+        0,0,1,0,0,0,0,0,1,0,0, // ..@.....@..
+        0,1,0,0,0,0,0,0,0,1,0  // .@.......@.
+    };
+
+    // create a two frame animation using the two alien sprites
+    SpriteAnimation* alienAnimation = new SpriteAnimation;
+
+    alienAnimation->loop = true;
+    alienAnimation->numFrames = 2;
+    alienAnimation->frameDuration = 10;
+    alienAnimation->time = 0;
+
+    alienAnimation->frames = new Sprite* [2];
+    alienAnimation->frames[0] = &alienSprite0;
+    alienAnimation->frames[1] = &alienSprite1;
+
+    // turn on vsync
+    glfwSwapInterval(1);
 
     // create and draw the player
     Sprite playerSprite;
@@ -324,10 +365,42 @@ int main(int argc, char* argv[])
         for (size_t ai = 0; ai < game.numAliens; ++ai)
         {
             const Alien& alien = game.aliens[ai];
-            bufferDrawSprite(&buffer, alienSprite, alien.x, alien.y, rgbToUint32(128, 0, 0));
+
+            size_t currentFrame = alienAnimation->time / alienAnimation->frameDuration;
+            const Sprite& sprite = *alienAnimation->frames[currentFrame];
+            bufferDrawSprite(&buffer, sprite, alien.x, alien.y, rgbToUint32(128, 0, 0));
         }
 
         bufferDrawSprite(&buffer, playerSprite, game.player.x, game.player.y, rgbToUint32(128, 0, 0));
+
+        // at the end of each frame we update all animations by advancingmtime.
+        // if animation reached its end, delete it or set time back to 0 if its looping
+        ++alienAnimation->time;
+        if (alienAnimation->time == alienAnimation->numFrames * alienAnimation->frameDuration)
+        {
+            if (alienAnimation->loop) alienAnimation->time = 0;
+            else
+            {
+                delete alienAnimation;
+                alienAnimation = nullptr;
+            }
+        }
+
+        // player movement variable
+        int playerMoveDir = 1;
+
+        // updating player movement at the end of each frame based on it
+        if (game.player.x + playerSprite.width + playerMoveDir >= game.width - 1)
+        {
+            game.player.x = game.width - playerSprite.width - playerMoveDir - 1;
+            playerMoveDir *= -1;
+        }
+        else if ((int)game.player.x + playerMoveDir <= 0)
+        {
+            game.player.x = 0;
+            playerMoveDir *= -1;
+        }
+        else game.player.x += playerMoveDir;
 
         // draw the a red sprite at position 112, 128
         // bufferDrawSprite(&buffer, alienSprite, 112, 128, rgbToUint32(128, 0, 0));
@@ -352,7 +425,7 @@ int main(int argc, char* argv[])
 
     glDeleteVertexArrays(1, &fullscreen_triangle_vao);
 
-    delete[] alienSprite.data;
+    delete[] alienSprite0.data;
     delete[] buffer.data;
 
     return 0;
