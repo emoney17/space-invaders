@@ -1,5 +1,3 @@
-#include <cstddef>
-#include <cstdint>
 #include <cstdio>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -142,7 +140,7 @@ int main(int argc, char* argv[])
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
     /* Create a windowed mode window and its OpenGL context */
-    GLFWwindow* window = glfwCreateWindow(bufferWidth, bufferHeight, "スペースインベーダー", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(2 * bufferWidth, 2 * bufferHeight, "スペースインベーダー", NULL, NULL);
     if(!window)
     {
         glfwTerminate();
@@ -357,6 +355,9 @@ int main(int argc, char* argv[])
 
     uint32_t clearColor = rgbToUint32(0, 128, 0);
 
+    // player movement variable
+    int playerMoveDir = 1;
+
     while (!glfwWindowShouldClose(window))
     {
         bufferClear(&buffer, clearColor);
@@ -385,9 +386,6 @@ int main(int argc, char* argv[])
                 alienAnimation = nullptr;
             }
         }
-
-        // player movement variable
-        int playerMoveDir = 1;
 
         // updating player movement at the end of each frame based on it
         if (game.player.x + playerSprite.width + playerMoveDir >= game.width - 1)
@@ -425,8 +423,11 @@ int main(int argc, char* argv[])
 
     glDeleteVertexArrays(1, &fullscreen_triangle_vao);
 
+    delete[] alienAnimation->frames;
+    delete[] alienSprite1.data;
     delete[] alienSprite0.data;
     delete[] buffer.data;
+    delete[] game.aliens;
 
     return 0;
 }
