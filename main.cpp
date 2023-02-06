@@ -123,6 +123,22 @@ void bufferDrawSprite(Buffer* buffer, const Sprite& sprite, size_t x, size_t y, 
     }
 }
 
+// test call back
+bool gameRunning = false;
+
+// key callback
+void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    switch (key)
+    {
+        case GLFW_KEY_ESCAPE:
+            if (action == GLFW_PRESS) gameRunning = false;
+            break;
+        default:
+            break;
+    }
+}
+
 int main(int argc, char* argv[])
 {
     // set buffer sizes
@@ -148,6 +164,7 @@ int main(int argc, char* argv[])
     }
 
     glfwMakeContextCurrent(window);
+    glfwSetKeyCallback(window, keyCallback);
 
     GLenum err = glewInit();
     if(err != GLEW_OK)
@@ -358,7 +375,10 @@ int main(int argc, char* argv[])
     // player movement variable
     int playerMoveDir = 1;
 
-    while (!glfwWindowShouldClose(window))
+    gameRunning = true;
+
+    // main loop
+    while (!glfwWindowShouldClose(window) && gameRunning)
     {
         bufferClear(&buffer, clearColor);
 
