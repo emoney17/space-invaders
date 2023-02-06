@@ -1,3 +1,5 @@
+#include <cstddef>
+#include <cstdint>
 #include <cstdio>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -40,13 +42,24 @@ struct Player
     size_t life; // health
 };
 
+// struct for bullet
+struct Bullet
+{
+    size_t x, y;
+    int dir; // indicates the direction of travel
+             // up or down
+};
+
+#define GAME_MAX_BULLETS 128
 // struct for all game related variables
 struct Game
 {
     size_t width, height; // size of the game
     size_t numAliens;
+    size_t numBullets;
     Alien* aliens; // alies as dynamically allocated array
     Player player;
+    Bullet bullets[GAME_MAX_BULLETS];
 };
 
 // struct for animations
@@ -129,6 +142,10 @@ bool gameRunning = false;
 // indicating direction of movement
 int moveDir = 0;
 
+// indicating if fire button is pressed
+bool firePressed = 0;
+
+
 // key callback
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -144,6 +161,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
         case GLFW_KEY_LEFT:
             if (action == GLFW_PRESS) moveDir -= 1;
             else if (action == GLFW_RELEASE) moveDir += 1;
+            break;
+        case GLFW_KEY_SPACE:
+            if (action == GLFW_PRESS) firePressed = true;
             break;
         default:
             break;
@@ -358,6 +378,17 @@ int main(int argc, char* argv[])
         1,1,1,1,1,1,1,1,1,1,1, // @@@@@@@@@@@
     };
 
+    // create and draw the bullets
+    Sprite bulletSprite;
+    bulletSprite.width = 1;
+    bulletSprite.height = 3;
+    bulletSprite.data = new uint8_t[3]
+    {
+        1, // @
+        1, // @
+        1, // @
+    };
+
     // create and initialize game struct
     Game game;
     game.width = bufferWidth;
@@ -405,6 +436,28 @@ int main(int argc, char* argv[])
 
         bufferDrawSprite(&buffer, playerSprite, game.player.x, game.player.y, rgbToUint32(128, 0, 0));
 
+        // draw bullets similar to how we draw the aliens
+        for (size_t bi = 0; bi < game.numBullets; ++bi)
+        {
+            const Bullet& bullet = game.bullets[bi];
+            const Sprite& sprite = bulletSprite;
+            bufferDrawSprite(&buffer, sprite, bullet.x, bullet.y, rgbToUint32(128, 0, 0));
+        }
+
+        // update projectile positions by addir dir and removing projectiles that
+        // move out of game bounds
+        for (size_t bi = 0; bi < game.numBullets;)
+        {
+            game.bullets[bi].y += game.bullets[bi].dir;
+            if (game.bullets[bi].y >= game.height || game.bullets[bi].y < bulletSprite.height)
+            {
+                game.bullets[bi] = game.bullets[game.numBullets - 1];
+                --game.numBullets;
+                continue;
+            }
+            ++bi;
+        }
+
         // at the end of each frame we update all animations by advancingmtime.
         // if animation reached its end, delete it or set time back to 0 if its looping
         ++alienAnimation->time;
@@ -450,6 +503,16 @@ int main(int argc, char* argv[])
 
         // draw the a red sprite at position 112, 128
         // bufferDrawSprite(&buffer, alienSprite, 112, 128, rgbToUint32(128, 0, 0));
+
+        // firing of projectiles by the plauer
+        if (firePressed && game.numBullets < GAME_MAX_BULLETS)
+        {
+            game.bullets[game.numBullets].x = game.player.x + playerSprite.width / 2;
+            game.bullets[game.numBullets].y = game.player.y + playerSprite.height;
+            game.bullets[game.numBullets].dir = 2;
+            ++game.numBullets;
+        }
+        firePressed = false;
 
         // draw the sprite each frame of the game loop
         glTexSubImage2D(
