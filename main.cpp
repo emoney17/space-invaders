@@ -126,6 +126,9 @@ void bufferDrawSprite(Buffer* buffer, const Sprite& sprite, size_t x, size_t y, 
 // test call back
 bool gameRunning = false;
 
+// indicating direction of movement
+int moveDir = 0;
+
 // key callback
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
@@ -133,6 +136,14 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     {
         case GLFW_KEY_ESCAPE:
             if (action == GLFW_PRESS) gameRunning = false;
+            break;
+        case GLFW_KEY_RIGHT:
+            if (action == GLFW_PRESS) moveDir += 1;
+            else if (action == GLFW_RELEASE) moveDir -= 1;
+            break;
+        case GLFW_KEY_LEFT:
+            if (action == GLFW_PRESS) moveDir -= 1;
+            else if (action == GLFW_RELEASE) moveDir += 1;
             break;
         default:
             break;
@@ -373,7 +384,7 @@ int main(int argc, char* argv[])
     uint32_t clearColor = rgbToUint32(0, 128, 0);
 
     // player movement variable
-    int playerMoveDir = 1;
+    // int playerMoveDir = 1;
 
     gameRunning = true;
 
@@ -407,18 +418,35 @@ int main(int argc, char* argv[])
             }
         }
 
+        // player movement variable
+        int playerMoveDir = 2 * moveDir;
+
+        if (playerMoveDir != 0)
+        {
+            // check if player is close to the bounds of the game
+            if (game.player.x + playerSprite.width + playerMoveDir >= game.width)
+            {
+                game.player.x = game.width - playerSprite.width;
+            }
+            else if ((int) game.player.x + playerMoveDir <= 0)
+            {
+                game.player.x = 0;
+            }
+            else game.player.x += playerMoveDir;
+        }
+
         // updating player movement at the end of each frame based on it
-        if (game.player.x + playerSprite.width + playerMoveDir >= game.width - 1)
-        {
-            game.player.x = game.width - playerSprite.width - playerMoveDir - 1;
-            playerMoveDir *= -1;
-        }
-        else if ((int)game.player.x + playerMoveDir <= 0)
-        {
-            game.player.x = 0;
-            playerMoveDir *= -1;
-        }
-        else game.player.x += playerMoveDir;
+        // if (game.player.x + playerSprite.width + playerMoveDir >= game.width - 1)
+        // {
+        //     game.player.x = game.width - playerSprite.width - playerMoveDir - 1;
+        //     playerMoveDir *= -1;
+        // }
+        // else if ((int)game.player.x + playerMoveDir <= 0)
+        // {
+        //     game.player.x = 0;
+        //     playerMoveDir *= -1;
+        // }
+        // else game.player.x += playerMoveDir;
 
         // draw the a red sprite at position 112, 128
         // bufferDrawSprite(&buffer, alienSprite, 112, 128, rgbToUint32(128, 0, 0));
