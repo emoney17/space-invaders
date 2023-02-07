@@ -1,5 +1,5 @@
-** This is still WIP**
 ## Requirements
+** This is still WIP**
 * glfw
 * glew
 ## Run
