@@ -4,5 +4,6 @@
 * glfw
 * glew
 ## Run
-clone repository and run ```make``` to compile
-then ```./game``` to run it
+* clone and cd into repository 
+* run ```make``` to compile
+* run ```./game``` to play
