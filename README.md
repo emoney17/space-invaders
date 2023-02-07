@@ -1,4 +1,4 @@
-** This is still WIP
+** This is still WIP**
 ## Requirements
 * glfw
 * glew
